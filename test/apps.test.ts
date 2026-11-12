@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  effectiveTitle,
   initials,
   isAllowedUrl,
   resolveAppUrl,
   validateConfig,
   ValidationError,
+  windowName,
   type LauncherApp
 } from '../src/shared/apps.js'
 
@@ -30,8 +32,18 @@ describe('validateConfig', () => {
     })
   })
 
-  it('keeps target "new"', () => {
-    expect(validateConfig({ apps: [{ ...sk, target: 'new' }] }).apps[0]!.target).toBe('new')
+  it.each(['same', 'new', 'reuse'])('keeps target "%s"', (target) => {
+    expect(validateConfig({ apps: [{ ...sk, target }] }).apps[0]!.target).toBe(target)
+  })
+
+  it('falls back to "same" for an unknown target', () => {
+    expect(validateConfig({ apps: [{ ...sk, target: 'popup' }] }).apps[0]!.target).toBe('same')
+  })
+
+  it('keeps a trimmed title and drops an empty one', () => {
+    expect(validateConfig({ title: '  Paikea ', apps: [] }).title).toBe('Paikea')
+    expect(validateConfig({ title: '   ', apps: [] })).toEqual({ version: 1, apps: [] })
+    expect(validateConfig({ apps: [] })).toEqual({ version: 1, apps: [] })
   })
 
   it.each([
@@ -47,6 +59,8 @@ describe('validateConfig', () => {
     ['protocol-relative url', { apps: [{ ...ext, url: '//evil.example/' }] }],
     ['bad icon url', { apps: [{ ...ext, iconUrl: 'data:image/png;base64,AAAA' }] }],
     ['style injection in color', { apps: [{ ...ext, color: 'red;background:url(x)' }] }],
+    ['title not a string', { title: 5, apps: [] }],
+    ['title too long', { title: 'x'.repeat(41), apps: [] }],
     ['too many apps', { apps: Array.from({ length: 101 }, (_, i) => ({ ...sk, id: `a${i}` })) }]
   ])('rejects %s', (_label, input) => {
     expect(() => validateConfig(input)).toThrow(ValidationError)
@@ -106,4 +120,19 @@ describe('initials', () => {
     ['@signalk/instrumentpanel', 'IN'],
     ['', '?']
   ])('%s → %s', (name, expected) => expect(initials(name)).toBe(expected))
+})
+
+describe('effectiveTitle', () => {
+  it('prefers the title, then the vessel name, then "Apps"', () => {
+    expect(effectiveTitle({ title: 'Bord' }, 'Paikea')).toBe('Bord')
+    expect(effectiveTitle({}, 'Paikea')).toBe('Paikea')
+    expect(effectiveTitle({ title: ' ' }, ' ')).toBe('Apps')
+    expect(effectiveTitle({}, undefined)).toBe('Apps')
+  })
+})
+
+describe('windowName', () => {
+  it('is stable per app id', () => {
+    expect(windowName({ id: 'fb' })).toBe('signalk-app-fb')
+  })
 })

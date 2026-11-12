@@ -70,6 +70,17 @@ export async function loadWebapps(): Promise<InstalledWebapp[]> {
   }
 }
 
+/** The vessel name from the data model; undefined when not set or not readable. */
+export async function loadVesselName(): Promise<string | undefined> {
+  try {
+    const raw = await getJson<unknown>('/signalk/v1/api/vessels/self/name')
+    const value = typeof raw === 'object' && raw !== null && 'value' in raw ? (raw as { value: unknown }).value : raw
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export async function loadLoginStatus(): Promise<LoginStatus> {
   try {
     return await getJson<LoginStatus>('/skServer/loginStatus')

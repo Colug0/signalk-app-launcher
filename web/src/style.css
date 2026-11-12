@@ -401,3 +401,7 @@ input[type='checkbox'] {
   gap: 8px;
   margin-top: 12px;
 }
+
+.title-row {
+  margin-bottom: 16px;
+}

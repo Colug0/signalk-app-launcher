@@ -13,7 +13,10 @@
     <title>App Launcher</title>
     <link rel="icon" href="/signalk-app-launcher/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/signalk-app-launcher/icon-180.png" />
-    <link rel="manifest" href="/signalk-app-launcher/manifest.webmanifest" />
+    <!-- Served by the plugin so the home screen name follows the settings.
+         use-credentials lets a logged-in phone read it when the server
+         does not allow anonymous read access. -->
+    <link rel="manifest" href="/plugins/signalk-app-launcher/manifest.webmanifest" crossorigin="use-credentials" />
   </head>
   <body>
     <main id="app" aria-live="polite"></main>

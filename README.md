@@ -19,6 +19,10 @@ Admins see an **Edit** link below the tiles. In edit mode:
 - **+ Signal K app** lists the installed webapps that are not on the list yet.
 - **+ Other app** adds anything else by name and URL.
 - ↑ ↓ change the order, ✎ edits name, URL, tab, icon and tile colour, ✕ removes.
+- **Name** sets the page title and the name a phone uses when you add the
+  launcher to the home screen. Left empty, it is the vessel name (Signal K
+  path `name`), or "Apps" when there is none. A launcher already on the home
+  screen may keep its old name until it is added again.
 - **Save** stores the list for everyone; **Cancel** discards the changes.
 
 ## Requirements
@@ -49,6 +53,20 @@ An app outside Signal K can be given as
 `{host}` lets one entry work whether the phone reaches the server by name or by
 IP address.
 
+### Opening apps
+
+Each app opens in one of three ways:
+
+| Setting | Behaviour |
+|---|---|
+| Same tab | replaces the launcher; Back returns to it |
+| New tab | a fresh tab every time |
+| Own tab, kept open | one tab per app; tapping the tile again brings that tab back instead of reloading the app, as long as the browser keeps it |
+
+"Own tab, kept open" needs the browser to allow the launcher to open windows.
+Phones may still close background tabs to save memory; the app then loads
+again on the next tap.
+
 ## Who may do what
 
 | Action | Who |
@@ -65,6 +83,7 @@ survives plugin updates.
 |---|---|---|---|
 | `GET` | `/plugins/signalk-app-launcher/apps` | read-only | the app list |
 | `PUT` | `/plugins/signalk-app-launcher/apps` | admin | replace the app list |
+| `GET` | `/plugins/signalk-app-launcher/manifest.webmanifest` | read-only | web app manifest named after the title or vessel |
 
 ## Development
 
