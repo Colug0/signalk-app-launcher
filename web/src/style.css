@@ -230,6 +230,9 @@ main {
   margin: 0;
   padding: 0;
   display: grid;
+  /* minmax(0, …) lets rows shrink below their content, so a long
+     description is cut with an ellipsis instead of widening the dialog. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -246,6 +249,7 @@ main {
 
 .pick {
   width: 100%;
+  min-width: 0;
   font: inherit;
   color: inherit;
   text-align: left;
