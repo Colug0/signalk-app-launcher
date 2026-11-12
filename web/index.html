@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover lets the page draw under the notch; the CSS keeps
+         content inside the safe-area insets. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b2239" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Apps" />
+    <title>App Launcher</title>
+    <link rel="icon" href="/signalk-app-launcher/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/signalk-app-launcher/icon-180.png" />
+    <link rel="manifest" href="/signalk-app-launcher/manifest.webmanifest" />
+  </head>
+  <body>
+    <main id="app" aria-live="polite"></main>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

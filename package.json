@@ -1,0 +1,53 @@
+{
+  "name": "signalk-app-launcher",
+  "version": "0.0.0",
+  "description": "Phone-friendly start page for Signal K webapps and other apps on the boat server, in an order you choose",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "public"
+  ],
+  "scripts": {
+    "build": "npm run build:server && npm run build:web",
+    "build:server": "tsc -p tsconfig.build.json",
+    "build:web": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p web/tsconfig.json",
+    "test": "vitest run",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "signalk-node-server-plugin",
+    "signalk-webapp",
+    "signalk-category-utility",
+    "launcher",
+    "start-page"
+  ],
+  "author": "Thomas Christoffel",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Colug0/signalk-app-launcher.git"
+  },
+  "homepage": "https://github.com/Colug0/signalk-app-launcher#readme",
+  "bugs": {
+    "url": "https://github.com/Colug0/signalk-app-launcher/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@signalk/server-api": "^2.37.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0",
+    "vite-plugin-checker": "^0.14.5",
+    "vitest": "^4.1.12"
+  },
+  "signalk": {
+    "displayName": "App Launcher",
+    "appIcon": "./icon.svg"
+  }
+}
