@@ -44,6 +44,8 @@ export function tile(app: LauncherApp, webapps: WebappIndex): HTMLLIElement {
     // Without JS the named target still opens one tab per app, but reloads it.
     link.target = windowName(app)
     link.addEventListener('click', (event) => {
+      // Ctrl/Cmd/Shift/Alt-clicks and other buttons keep the browser's own meaning.
+      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return
       if (openOrReturn(link.href, windowName(app))) event.preventDefault()
     })
   }

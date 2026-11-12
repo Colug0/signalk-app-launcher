@@ -144,8 +144,12 @@ async function main(): Promise<void> {
     }
     return
   }
-  vessel = await vesselPromise
   applyTitle()
+  // The name only changes the title; it must not hold up the page.
+  void vesselPromise.then((name) => {
+    vessel = name
+    applyTitle()
+  })
   editable = canEdit(await statusPromise)
   webapps = await webappsPromise
 
