@@ -1,6 +1,6 @@
 {
   "name": "signalk-app-launcher",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Phone-friendly start page for Signal K webapps and other apps on the boat server, in an order you choose",
   "type": "module",
   "main": "dist/index.js",
