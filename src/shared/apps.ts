@@ -1,7 +1,13 @@
 // Shared between the plugin (validation before saving) and the webapp
 // (rendering). Keep this file free of Node and DOM imports.
 
-export type OpenTarget = 'same' | 'new'
+/**
+ * same: replace the launcher; new: a fresh tab each time; reuse: one tab per
+ * app that is brought back instead of reloaded.
+ */
+export type OpenTarget = 'same' | 'new' | 'reuse'
+
+const TARGETS: readonly OpenTarget[] = ['same', 'new', 'reuse']
 
 interface AppBase {
   id: string
@@ -36,15 +42,20 @@ export type LauncherApp = SignalKApp | ExternalApp
 
 export interface LauncherConfig {
   version: 1
+  /** Name for the home screen and page title; empty means the vessel name. */
+  title?: string
   apps: LauncherApp[]
 }
 
 export const EMPTY_CONFIG: LauncherConfig = { version: 1, apps: [] }
 
+export const DEFAULT_TITLE = 'Apps'
+
 export const LIMITS = {
   apps: 100,
   id: 64,
   name: 60,
+  title: 40,
   url: 2048,
   color: 32
 } as const
@@ -117,7 +128,7 @@ export function validateConfig(input: unknown): LauncherConfig {
     seen.add(id)
 
     const name = str(app.name, 'name', LIMITS.name, i)
-    const target: OpenTarget = app.target === 'new' ? 'new' : 'same'
+    const target: OpenTarget = TARGETS.includes(app.target as OpenTarget) ? (app.target as OpenTarget) : 'same'
 
     const iconUrl = optStr(app.iconUrl, 'iconUrl', LIMITS.url, i)
     if (iconUrl !== undefined && !isAllowedUrl(iconUrl)) {
@@ -152,7 +163,27 @@ export function validateConfig(input: unknown): LauncherConfig {
     throw new ValidationError(`apps[${i}].kind must be "signalk" or "external"`)
   })
 
-  return { version: 1, apps: result }
+  const rawTitle = (input as { title?: unknown }).title
+  let title: string | undefined
+  if (rawTitle !== undefined && rawTitle !== null) {
+    if (typeof rawTitle !== 'string') throw new ValidationError('title must be a string')
+    title = rawTitle.trim()
+    if (title.length > LIMITS.title) {
+      throw new ValidationError(`title is longer than ${LIMITS.title} characters`)
+    }
+  }
+
+  return { version: 1, ...(title && { title }), apps: result }
+}
+
+/** The name to show: the configured title, else the vessel name, else "Apps". */
+export function effectiveTitle(config: Pick<LauncherConfig, 'title'>, vesselName: string | undefined): string {
+  return config.title?.trim() || vesselName?.trim() || DEFAULT_TITLE
+}
+
+/** Window name for apps opened with target "reuse". */
+export function windowName(app: Pick<LauncherApp, 'id'>): string {
+  return `signalk-app-${app.id}`
 }
 
 /** The URL to open for an app, given the location the launcher runs at. */

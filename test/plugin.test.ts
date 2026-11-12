@@ -15,9 +15,10 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true })
 })
 
-function fakeApp() {
+function fakeApp(name?: unknown) {
   return {
     getDataDirPath: () => dir,
+    getSelfPath: (path: string) => (path === 'name' ? name : undefined),
     setPluginStatus: vi.fn(),
     error: vi.fn(),
     debug: vi.fn()
@@ -29,12 +30,22 @@ function fakeRes() {
     statusCode: 200,
     body: undefined as unknown,
     headers: {} as Record<string, string>,
+    contentType: '',
+    sent: '',
     status(code: number) {
       res.statusCode = code
       return res
     },
     json(body: unknown) {
       res.body = body
+      return res
+    },
+    type(value: string) {
+      res.contentType = value
+      return res
+    },
+    send(body: string) {
+      res.sent = body
       return res
     },
     set(name: string, value: string) {
@@ -74,6 +85,7 @@ describe('plugin', () => {
     createPlugin(fakeApp()).registerWithRouter!(router as never)
     expect(routes.map(({ method, path, access }) => ({ method, path, access }))).toEqual([
       { method: 'GET', path: '/apps', access: 'readonly' },
+      { method: 'GET', path: '/manifest.webmanifest', access: 'readonly' },
       { method: 'PUT', path: '/apps', access: 'admin' }
     ])
   })
@@ -110,5 +122,30 @@ describe('plugin', () => {
     await put({ body: { apps: 'nope' } }, res)
     expect(res.statusCode).toBe(400)
     expect(res.body).toEqual({ error: 'apps must be an array' })
+  })
+
+  it('names the manifest after the vessel, then after the saved title', async () => {
+    const { router, routes } = fakeRouter(true)
+    createPlugin(fakeApp('Paikea')).registerWithRouter!(router as never)
+    const manifest = routes.find((r) => r.path === '/manifest.webmanifest')!.handler
+    const put = routes.find((r) => r.method === 'PUT')!.handler
+
+    const first = fakeRes()
+    await manifest({}, first)
+    expect(first.contentType).toBe('application/manifest+json')
+    expect(JSON.parse(first.sent)).toMatchObject({ name: 'Paikea', short_name: 'Paikea' })
+
+    await put({ body: { title: 'Bord', apps: [] } }, fakeRes())
+    const second = fakeRes()
+    await manifest({}, second)
+    expect(JSON.parse(second.sent).name).toBe('Bord')
+  })
+
+  it('falls back to "Apps" without a vessel name', async () => {
+    const { router, routes } = fakeRouter(true)
+    createPlugin(fakeApp(undefined)).registerWithRouter!(router as never)
+    const res = fakeRes()
+    await routes.find((r) => r.path === '/manifest.webmanifest')!.handler({}, res)
+    expect(JSON.parse(res.sent).name).toBe('Apps')
   })
 })

@@ -1,10 +1,11 @@
 import './style.css'
-import type { LauncherConfig } from '../../src/shared/apps'
+import { effectiveTitle, type LauncherConfig } from '../../src/shared/apps'
 import {
   canEdit,
   HttpError,
   loadConfig,
   loadLoginStatus,
+  loadVesselName,
   loadWebapps,
   LOGIN_URL,
   type InstalledWebapp
@@ -20,6 +21,15 @@ let config: LauncherConfig | undefined
 let webapps: InstalledWebapp[] = []
 let editable = false
 let editor: Editor | undefined
+let vessel: string | undefined
+
+/** Page title and the name iOS proposes for the home screen. */
+function applyTitle(): void {
+  if (!config) return
+  const title = effectiveTitle(config, vessel)
+  document.title = title
+  document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', title)
+}
 
 function message(text: string, ...detail: Node[]): HTMLElement {
   return el('section', { className: 'message' }, el('p', { textContent: text }), ...detail.map((d) => el('p', { className: 'detail' }, d)))
@@ -65,8 +75,10 @@ function showEditor(): void {
   editor = createEditor({
     config,
     webapps,
+    vesselName: vessel,
     onSaved: (stored) => {
       config = stored
+      applyTitle()
       editor = undefined
       leaveEdit()
     },
@@ -110,6 +122,7 @@ async function main(): Promise<void> {
   root.replaceChildren(message('Loading…'))
   const statusPromise = loadLoginStatus()
   const webappsPromise = loadWebapps()
+  const vesselPromise = loadVesselName()
   try {
     config = await loadConfig()
   } catch (error) {
@@ -131,6 +144,12 @@ async function main(): Promise<void> {
     }
     return
   }
+  applyTitle()
+  // The name only changes the title; it must not hold up the page.
+  void vesselPromise.then((name) => {
+    vessel = name
+    applyTitle()
+  })
   editable = canEdit(await statusPromise)
   webapps = await webappsPromise
 

@@ -1,4 +1,11 @@
-import { validateConfig, ValidationError, type LauncherApp, type LauncherConfig } from '../../src/shared/apps'
+import {
+  DEFAULT_TITLE,
+  LIMITS,
+  validateConfig,
+  ValidationError,
+  type LauncherApp,
+  type LauncherConfig
+} from '../../src/shared/apps'
 import { move, removeAt, sameApps, suggestions, upsert } from '../../src/shared/edit'
 import { HttpError, LOGIN_URL, saveConfig, SELF, webappTitle, type InstalledWebapp } from './api'
 import { button, el, newId } from './dom'
@@ -7,6 +14,8 @@ import { badge, type WebappIndex } from './tiles'
 export interface EditorContext {
   config: LauncherConfig
   webapps: InstalledWebapp[]
+  /** Shown as the default when no title is set. */
+  vesselName: string | undefined
   /** Called after a successful save with what the server stored. */
   onSaved: (config: LauncherConfig) => void
   onClose: () => void
@@ -48,11 +57,20 @@ function openDialog(title: string, ...content: Node[]): HTMLDialogElement {
 
 export function createEditor(ctx: EditorContext): Editor {
   const saved = ctx.config.apps
+  const savedTitle = ctx.config.title ?? ''
   let apps: LauncherApp[] = [...saved]
   let busy = false
   const index: WebappIndex = new Map(ctx.webapps.map((w) => [w.name, w]))
 
   const status = el('p', { className: 'status', role: 'status' })
+  const titleInput = el('input', {
+    className: 'field',
+    value: savedTitle,
+    maxLength: LIMITS.title,
+    placeholder: ctx.vesselName ?? DEFAULT_TITLE
+  })
+  titleInput.addEventListener('input', () => render())
+  const isDirty = (): boolean => !sameApps(apps, saved) || titleInput.value.trim() !== savedTitle
   const list = el('ol', { className: 'edit-list' })
   const saveButton = button('Save', () => void save(), 'btn primary')
   const element = el(
@@ -66,6 +84,17 @@ export function createEditor(ctx: EditorContext): Editor {
       saveButton
     ),
     status,
+    el(
+      'label',
+      { className: 'form-row title-row' },
+      el('span', { textContent: 'Name' }),
+      titleInput,
+      el('small', {
+        textContent: ctx.vesselName
+          ? `Page title and home screen name. Empty uses the vessel name "${ctx.vesselName}".`
+          : `Page title and home screen name. Empty uses the vessel name, or "${DEFAULT_TITLE}" when there is none.`
+      })
+    ),
     list,
     el(
       'div',
@@ -81,7 +110,7 @@ export function createEditor(ctx: EditorContext): Editor {
   }
 
   function render(): void {
-    saveButton.disabled = busy || sameApps(apps, saved)
+    saveButton.disabled = busy || !isDirty()
     if (apps.length === 0) {
       list.replaceChildren(el('li', { className: 'empty', textContent: 'No apps on the list.' }))
       return
@@ -130,7 +159,7 @@ export function createEditor(ctx: EditorContext): Editor {
     render()
     setStatus('Saving…')
     try {
-      const stored = await saveConfig({ version: 1, apps })
+      const stored = await saveConfig({ version: 1, title: titleInput.value.trim(), apps })
       setStatus('')
       ctx.onSaved(stored)
     } catch (error) {
@@ -214,7 +243,8 @@ export function createEditor(ctx: EditorContext): Editor {
       'select',
       { className: 'field' },
       el('option', { value: 'same', textContent: 'Same tab' }),
-      el('option', { value: 'new', textContent: 'New tab' })
+      el('option', { value: 'new', textContent: 'New tab' }),
+      el('option', { value: 'reuse', textContent: 'Own tab, kept open' })
     )
     target.value = existing?.target ?? 'same'
     const iconUrl = el('input', {
@@ -243,7 +273,7 @@ export function createEditor(ctx: EditorContext): Editor {
       kind === 'external'
         ? field('URL', url, '{host} becomes the host name you opened the launcher with. A path like /grafana/ stays on this server.')
         : el('p', { className: 'sub', textContent: `Signal K webapp ${existing?.kind === 'signalk' ? existing.webapp : ''}` }),
-      field('Open in', target),
+      field('Open in', target, 'Own tab, kept open: tapping the tile again returns to the open app instead of reloading it.'),
       field('Icon URL', iconUrl),
       el('label', { className: 'form-row inline' }, ownColor, el('span', { textContent: 'Own tile colour' }), color),
       error,
@@ -258,7 +288,7 @@ export function createEditor(ctx: EditorContext): Editor {
       const base = {
         id: existing?.id ?? newId(),
         name: name.value,
-        target: target.value === 'new' ? 'new' : 'same',
+        target: target.value,
         iconUrl: iconUrl.value,
         color: ownColor.checked ? color.value : undefined
       }
@@ -280,5 +310,5 @@ export function createEditor(ctx: EditorContext): Editor {
   }
 
   render()
-  return { element, isDirty: () => !sameApps(apps, saved) }
+  return { element, isDirty }
 }
