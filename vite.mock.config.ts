@@ -5,14 +5,17 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { defineConfig, mergeConfig, type Plugin } from 'vite'
 import base from './vite.config'
-import { validateConfig, ValidationError, type LauncherConfig } from './src/shared/apps'
+import { buildManifest } from './src/manifest'
+import { effectiveTitle, validateConfig, ValidationError, type LauncherConfig } from './src/shared/apps'
+
+const VESSEL_NAME = 'Sea Breeze'
 
 const levelOf = (req: IncomingMessage): string =>
   /(?:^|;\s*)mock-level=([a-z]+)/.exec(req.headers.cookie ?? '')?.[1] ?? 'admin'
 
 const webapps = [
-  { name: '@signalk/freeboard-sk', description: 'Chart plotter', signalk: { displayName: 'Freeboard-SK', appIcon: 'http://127.0.0.1:5175/signalk-app-launcher/icon.svg' } },
-  { name: 'broken-icon-app', description: 'Icon that fails to load', signalk: { displayName: 'Broken Icon', appIcon: './missing.png' } },
+  // The icon path does not exist here, so the tile shows the initials fallback.
+  { name: '@signalk/freeboard-sk', description: 'Chart plotter', signalk: { displayName: 'Freeboard-SK', appIcon: './assets/icons/icon-192x192.png' } },
   { name: '@mxtommy/kip', description: 'Instrument panel', signalk: { displayName: 'KIP' } },
   { name: '@signalk/instrumentpanel', description: 'Instrument panel (classic)' },
   { name: 'signalk-anchoralarm-plugin', description: 'Anchor alarm', signalk: { displayName: 'Anchor Alarm' } },
@@ -25,7 +28,10 @@ let config: LauncherConfig = {
     { id: 'fb', kind: 'signalk', name: 'Freeboard-SK', webapp: '@signalk/freeboard-sk', target: 'same' },
     { id: 'graf', kind: 'external', name: 'Grafana', url: 'http://{host}:3001/', target: 'new' },
     { id: 'ha', kind: 'external', name: 'Home Assistant', url: 'http://{host}:8123/', target: 'same', color: '#18bcf2' },
-    { id: 'kip', kind: 'signalk', name: 'KIP', webapp: '@mxtommy/kip', target: 'same' }
+    { id: 'kip', kind: 'signalk', name: 'KIP', webapp: '@mxtommy/kip', target: 'reuse' },
+    { id: 'nr', kind: 'external', name: 'Node-RED', url: 'http://{host}:1880/', target: 'new', color: '#8f0000' },
+    { id: 'radar', kind: 'external', name: 'Radar', url: 'http://{host}:3002/', target: 'reuse', color: '#2e7d32' },
+    { id: 'logs', kind: 'external', name: 'Data Logs', url: '/grafana/', target: 'same', color: '#6a4c93' }
   ]
 }
 
@@ -54,6 +60,12 @@ const fakeServer: Plugin = {
           readOnlyAccess: level !== 'denied',
           ...(level === 'admin' && { userLevel: 'admin' })
         })
+      }
+      if (url.startsWith('/signalk/v1/api/vessels/self/name')) {
+        return send(res, 200, VESSEL_NAME)
+      }
+      if (url.startsWith('/plugins/signalk-app-launcher/manifest.webmanifest')) {
+        return send(res, 200, buildManifest(effectiveTitle(config, VESSEL_NAME)))
       }
       if (url.startsWith('/skServer/webapps')) {
         return level === 'denied' ? send(res, 401, {}) : send(res, 200, webapps)

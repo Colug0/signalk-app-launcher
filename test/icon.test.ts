@@ -23,4 +23,16 @@ describe('static assets', () => {
     expect(pkg.signalk.appIcon).toBe('./icon.svg')
     expect(pkg.files).toContain('public')
   })
+
+  it('ships every screenshot named in package.json', async () => {
+    const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'))
+    const shots: string[] = pkg.signalk.screenshots
+    expect(shots.length).toBeGreaterThan(0)
+    for (const shot of shots) {
+      const rel = shot.replace(/^\.\//, '')
+      expect(pkg.files.some((f: string) => rel === f || rel.startsWith(`${f.replace(/\/$/, '')}/`))).toBe(true)
+      const bytes = await readFile(new URL(`../${rel}`, import.meta.url))
+      expect(bytes.subarray(1, 4).toString('ascii')).toBe('PNG')
+    }
+  })
 })

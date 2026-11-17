@@ -7,7 +7,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "public"
+    "public",
+    "docs/screenshots"
   ],
   "scripts": {
     "build": "npm run build:server && npm run build:web",
@@ -48,6 +49,12 @@
   },
   "signalk": {
     "displayName": "App Launcher",
-    "appIcon": "./icon.svg"
+    "appIcon": "./icon.svg",
+    "screenshots": [
+      "./docs/screenshots/tiles-light.png",
+      "./docs/screenshots/tiles-dark.png",
+      "./docs/screenshots/edit.png",
+      "./docs/screenshots/add-signalk-app.png"
+    ]
   }
 }
