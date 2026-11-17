@@ -10,7 +10,13 @@ choose.
 - Arrange the tiles by hand.
 - Laid out for phones, including the notch and gesture bar.
 
-> Status: early development, not yet tested against a real Signal K server.
+<p>
+  <img src="docs/screenshots/tiles-light.png" alt="Tiles on a phone" width="220">
+  <img src="docs/screenshots/edit.png" alt="Edit mode" width="220">
+  <img src="docs/screenshots/add-signalk-app.png" alt="Adding a Signal K webapp" width="220">
+</p>
+
+Screenshots use example apps.
 
 ## Editing
 
